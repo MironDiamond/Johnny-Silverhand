@@ -1,12 +1,14 @@
 script_name("Johnny Silverhand")
 script_author("Miron Diamond")
 
-script_version = 1.0
+script_version = 1.1
 
 require("moonloader")
 
 ffi = require("ffi")
 mrkeys = require("rkeys")
+https = require 'ssl.https'
+dlstatus = require('moonloader').download_status
 memory = require "memory"
 encoding = require("encoding")
 keys = require "vkeys"
@@ -28,6 +30,10 @@ imgui.BufferingBar = require('imgui_addons').BufferingBar
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
+setAudioStreamVolume(playsound_1, 100)
+setAudioStreamVolume(playsound_2, 100)
+setAudioStreamVolume(playsound_3, 100)
+
 mainIni = inicfg.load(nil, directIni)
 
 thread_binder = lua_thread.create(function() end)
@@ -41,23 +47,8 @@ Welcome_Status = mainIni.Welcome.status
 function main()
 	if not isSampLoaded() or not isSampfuncsLoaded() then return end
 	while not isSampAvailable() do wait(0) end
-	lua_thread.create(function()
-			local update_url = "https://raw.githubusercontent.com/MironDiamond/Johnny-Silverhand/main/update.ini"
-			local update_text = https.request(update_url)
-			local update_version = update_text:match("version=(.*)")
-			local script_url = "https://github.com/MironDiamond/Johnny-Silverhand/raw/main/Johnny%20Silverhand.lua"
-			local script_path = thisScript().path
-			if tonumber(update_version) > script_version then
-				Notification("Обновление системы..", 2)
-				downloadUrlToFile(script_url, script_path, function(id, status)
-					if status == dlstatus.STATUS_ENDDOWNLOADDATA then
-						Notification("Обновление завершено!", 2)
-						thisScript():reload()
-					end
-				end)
-			end
-	end)
 	math.randomseed(os.clock())
+	AutoUpdate()
 	Register_Table()
 	Register_Imgui()
 	Register_Hotkey()
@@ -119,7 +110,24 @@ function main()
 	end
 end
 
--- Register
+function AutoUpdate()
+	lua_thread.create(function()
+			local update_url = "https://raw.githubusercontent.com/MironDiamond/Johnny-Silverhand/main/update.ini"
+			local update_text = https.request(update_url)
+			local update_version = update_text:match("version=(.*)")
+			local script_url = "https://raw.githubusercontent.com/MironDiamond/Johnny-Silverhand/main/Johnny%20Silverhand.lua"
+			local script_path = thisScript().path
+			if tonumber(update_version) > script_version then
+				Notification("Обновление системы..", 2)
+				downloadUrlToFile(script_url, script_path, function(id, status)
+					if status == dlstatus.STATUS_ENDDOWNLOADDATA then
+						Notification("Обновление завершено!", 2)
+						thisScript():reload()
+					end
+				end)
+			end
+	end)
+end
 
 function SaveSettings()
 	local filename_binder = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\binder.json"):format(getFolderPath(0x05))
@@ -474,10 +482,10 @@ function Register_Imgui()
 	combo_patrol_str = {u8"Доклад с поста", u8"Доклад с патруля"}
 
 	 skins = {}
-	 --[[for i = 0, 311 do
-			local file = ('moonloader/Johnny Silverhand/skins/'..i..'.png')
-			skins[i] = imgui.CreateTextureFromFile(file)
-	 end--]]
+	 for i = 0, 311 do
+		local file = ('moonloader/Johnny Silverhand/skins/'..i..'.png')
+		skins[i] = imgui.CreateTextureFromFile(file)
+	 end
 end
 
 function Register_Hotkey()
@@ -492,7 +500,7 @@ function Register_Hotkey()
 
 	if Welcome_Status then
 		bindMenu = mrkeys.registerHotKey(HotKeyMenu.v, true, function()
-			if not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hud_window_state.v and not hint_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
+			if not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hint_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
 				if not sampIsDialogActive() and not sampIsChatInputActive() then
 					main_window_state.v = not main_window_state.v
 					imgui.Process = main_window_state.v
@@ -501,7 +509,7 @@ function Register_Hotkey()
 		end)
 
 		bindHint = mrkeys.registerHotKey(HotKeyHint.v, true, function()
-			if not main_window_state.v and not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hud_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
+			if not main_window_state.v and not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
 				if not sampIsDialogActive() and not sampIsChatInputActive() then
 					hint_window_state.v = not hint_window_state.v
 					imgui.Process = hint_window_state.v
@@ -510,7 +518,7 @@ function Register_Hotkey()
 		end)
 
 		bindPursuitMod = mrkeys.registerHotKey(HotKeyPursuitMod.v, true, function()
-			if not main_window_state.v and not settings_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hud_window_state.v and not hint_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
+			if not main_window_state.v and not settings_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hint_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
 				if not sampIsDialogActive() and not sampIsChatInputActive() then
 					pursuit_mod_window_state.v = not pursuit_mod_window_state.v
 					imgui.Process = pursuit_mod_window_state.v
@@ -519,7 +527,7 @@ function Register_Hotkey()
 		end)
 
 		bindPatrol = mrkeys.registerHotKey(HotKeyPatrol.v, true, function()
-			if not main_window_state.v and not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hud_window_state.v and not hint_window_state.v and not ticket_window_state.v then
+			if not main_window_state.v and not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hint_window_state.v and not ticket_window_state.v then
 				if not sampIsDialogActive() and not sampIsChatInputActive() then
 					patrol_window_state.v = not patrol_window_state.v
 					imgui.Process = patrol_window_state.v
@@ -528,7 +536,7 @@ function Register_Hotkey()
 		end)
 
 		bindFastMenu = mrkeys.registerHotKey(HotKeyFastMenu.v, true, function()
-			if not main_window_state.v and not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not hud_window_state.v and not hint_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
+			if not main_window_state.v and not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not hint_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
 				if not sampIsDialogActive() and not sampIsChatInputActive() then
 					fastmenu_window_state.v = not fastmenu_window_state.v
 					imgui.Process = fastmenu_window_state.v
@@ -559,20 +567,31 @@ function Register_Hotkey()
 				RPGun(getCurrentCharWeapon(PLAYER_PED))
 			end
 		end)
+
+		mrkeys.registerHotKey({2,18}, true, function()
+		local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
+			if result and doesCharExist(ped) then
+				local success, id = sampGetPlayerIdByCharHandle(ped)
+				if success then
+					current_id = id
+					Notification("Вы начали взаимодействие с игроком: " .. sampGetPlayerNickname(id) .. "(" .. id .. ")", 2)
+				end
+			end
+		end)
 	end
 end
 
 function Register_Command()
 	if Welcome_Status then
 		sampRegisterChatCommand("johnny", function()
-			if not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hud_window_state.v and not hint_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
+			if not settings_window_state.v and not pursuit_mod_window_state.v and not wanted_window_state.v and not fastmenu_window_state.v and not hint_window_state.v and not ticket_window_state.v and not patrol_window_state.v then
 				main_window_state.v = not main_window_state.v
 				imgui.Process = main_window_state.v
 			end
 		end)
 
 		sampRegisterChatCommand("jhelp", function()
-			sampShowDialog(777, "{FFD700}Johnny Silverhand | by Miron Diamond", "{FFD700}/johny{FFFFFF}\t\tОткрыть главное меню\n{FFD700}/target{FFFFFF}\t\tНачать взаимодействие с игроком.\n{FFD700}/targetoff{FFFFFF}\tПерестать взаимодействие с игроком.\n{FFD700}/cc{FFFFFF}\t\tПолностью очистить чат.\n{FFD700}/rec{FFFFFF}\t\tРеконнект в секундах.", "Закрыть", "", 0)
+			sampShowDialog(777, "{FFD700}Johnny Silverhand | by Miron Diamond", "{FFD700}/johnny{FFFFFF}\t\tОткрыть главное меню\n{FFD700}/target{FFFFFF}\t\tНачать взаимодействие с игроком.\n{FFD700}/targetoff{FFFFFF}\tПерестать взаимодействие с игроком.\n{FFD700}/cc{FFFFFF}\t\tПолностью очистить чат.\n{FFD700}/rec{FFFFFF}\t\tРеконнект в секундах.", "Закрыть", "", 0)
 		end)
 
 		sampRegisterChatCommand("target", function(arg)
@@ -1631,18 +1650,22 @@ function imgui.OnDrawFrame()
 				local player_veh_hp = "N/A"
 				local player_veh_speed = "N/A"
 				local player_afk = u8"Нет"
-				local car = storeCarCharIsInNoSave(player_ped)
-				if isCharInCar(player_ped) then
-					player_veh = cars[tonumber(getCarModel(car))-399]
-					player_veh_hp = getCarHealth(car)
-					player_veh_speed = round(getCarSpeed(car))
+				if isCharInAnyCar(player_ped) then
+					if storeCarCharIsInNoSave(player_ped) then
+						local car = storeCarCharIsInNoSave(player_ped)
+						if isCharInCar(player_ped) then
+							player_veh = cars[tonumber(getCarModel(car))-399]
+							player_veh_hp = getCarHealth(car)
+							player_veh_speed = round(getCarSpeed(car))
+						end
+					end
 				end
 				if sampIsPlayerPaused(player_id) then
 					player_afk = u8"Да"
 				end
 				imgui.SetCursorPosX(10)
 				imgui.SetCursorPosY(10)
-				--imgui.Image(skins[tonumber(player_skin)], imgui.ImVec2(50, 50))
+				imgui.Image(skins[tonumber(player_skin)], imgui.ImVec2(50, 50))
 				imgui.PushFont(fontsize18)
 				imgui.SetCursorPosX(70)
 				imgui.SetCursorPosY(10)
@@ -1715,7 +1738,7 @@ function imgui.OnDrawFrame()
 				end
 				style.FrameRounding = 3
 			else
-				Notification("Johnny Silverhand:\n\nЁбаный в рот, скрылся пидарас!", 3)
+				Notification("Johnny Silverhand:\n\nЁбаный в рот, скрылся уёбок!", 3)
 				current_id = nil
 			end
 		end
@@ -1847,11 +1870,15 @@ function imgui.OnDrawFrame()
 		if current_id then
 			Player_Name = sampGetPlayerNickname(current_id).."("..current_id..")"
 		end
-		local car = storeCarCharIsInNoSave(PLAYER_PED)
-		if isCharInCar(PLAYER_PED, car) then
-			local car = storeCarCharIsInNoSave(PLAYER_PED)
-			if isCarSirenOn(car) then
-				Siren_Status = fa.ICON_CHECK_CIRCLE
+		if isCharInAnyCar(PLAYER_PED) then
+			if storeCarCharIsInNoSave(PLAYER_PED) then
+				local car = storeCarCharIsInNoSave(PLAYER_PED)
+				if isCharInCar(PLAYER_PED, car) then
+					local car = storeCarCharIsInNoSave(PLAYER_PED)
+					if isCarSirenOn(car) then
+						Siren_Status = fa.ICON_CHECK_CIRCLE
+					end
+				end
 			end
 		end
 
@@ -1946,23 +1973,21 @@ function sampev.onShowDialog(id, style, title, button1, button2, text)
 end
 
 function sampev.onSendTakeDamage(playerId)
-	if playerId ~= 65535 then
-		HitMe_ID = tostring(playerId)
-		HitMe_Nick = tostring(sampGetPlayerNickname(playerId))
-		HitMe_Ping = sampGetPlayerPing(playerId)
-		HitMe_Score = sampGetPlayerScore(playerId)
-		HitMe_RPNick = string.gsub(sampGetPlayerNickname(playerId), "_", " ")
-	end
+	HitMe_ID = tostring(playerId)
 end
 
 function sampev.onSendGiveDamage(playerId)
-	if playerId ~= 65535 then
-		HitByMe_ID = tostring(playerId)
-		HitByMe_Nick = tostring(sampGetPlayerNickname(playerId))
-		HitByMe_Ping = sampGetPlayerPing(playerId)
-		HitByMe_Score = sampGetPlayerScore(playerId)
-		HitByMe_RPNick = string.gsub(sampGetPlayerNickname(playerId), "_", " ")
+	HitByMe_ID = tostring(playerId)
+end
+
+function sampev.onSendEnterVehicle(vid, mid)
+	if getCharArmour(PLAYER_PED) == 0 then
+		Notification("Johnny Silverhand:\n\nКуда блять без бронежилета?!", 3)
 	end
+end
+
+function sampev.onSendDeathNotification()
+	Notification("Johnny Silverhand:\n\nЕбать ты нулина..", 3)
 end
 
 function onScriptTerminate(script, quitGame)
@@ -2124,7 +2149,7 @@ function onStartHotkey(content)
 end
 
 function Variables()
-	local _, MyID = sampGetPlayerIdByCharHandle(PLAYER_PED) sampGetPlayerNickname(MyID)
+	local _, MyID = sampGetPlayerIdByCharHandle(PLAYER_PED)
 	local player_id = nil
 	local player_id = ""
 	local player_nick =""
@@ -2203,15 +2228,7 @@ function Variables()
 		["{s}"] = tostring(os.date("%S", os.time())),
 		["{date}"] = tostring(os.date("%d.%m.%Y ", os.time())),
 		["{dmg_me_id}"] = tostring(HitMe_ID),
-		["{dmg_me_nick}"] = tostring(HitMe_Nick),
-		["{dmg_me_rpnick}"] = tostring(HitMe_RPNick),
-		["{dmg_me_ping}"] = tostring(HitMe_Ping),
-		["{dmg_me_score}"] = tostring(HitMe_Score),
 		["{dmg_id}"] = tostring(HitByMe_ID),
-		["{dmg_nick}"] = tostring(HitByMe_Nick),
-		["{dmg_rpnick}"] = tostring(HitByMe_RPNick),
-		["{dmg_ping}"] = tostring(HitByMe_Ping),
-		["{dmg_score}"] = tostring(HitByMe_Score),
 		["{closest_veh_id}"] = tostring(getClosestCarId()),
 		["{closest_veh_name}"] = tostring(getClosestCarName()),
 		["{mark}"] = tostring(u8:decode(text_buffer_patrol_mark.v)),
@@ -2253,15 +2270,7 @@ function HelpVariables()
 		["{s}"] = "Возвращает текущие секунды.",
 		["{date}"] = "Возвращает текущую дату.",
 		["{dmg_me_id}"] = "Возвращает id того кто стрелял по вам.",
-		["{dmg_me_nick}"] = "Возвращает ник того кто стрелял по вам.",
-		["{dmg_me_rpnick}"] = "Возвращает рп-ник того кто стрелял по вам.",
-		["{dmg_me_ping}"] = "Возвращает пинг того кто стрелял по вам.",
-		["{dmg_me_score}"] = "Возвращает уровень того кто стрелял по вам.",
 		["{dmg_id}"] = "Возвращает id того по которому вы стреляли.",
-		["{dmg_nick}"] = "Возвращает ник того по которому вы стреляли.",
-		["{dmg_rpnick}"] = "Возвращает рп-ник того по которому вы стреляли.",
-		["{dmg_ping}"] = "Возвращает пинг того по которому вы стреляли.",
-		["{dmg_score}"] = "Возвращает уровень того по которому вы стреляли.",
 		["{closest_veh_id}"] = "Возвращает id ближайшего транспорта.",
 		["{closest_veh_name}"] = "Возвращает название ближайшего транспорта.",
 		["{mark}"] = "Возвращает вашу маркировку.",
@@ -3093,52 +3102,6 @@ function imgui.TextCenterRGB(text)
     render_text(text)
 end
 
-function apply_welcome_red_style()
-	colors[clr.FrameBg]                = ImVec4(0.48, 0.16, 0.16, 0.54)
-	colors[clr.FrameBgHovered]         = ImVec4(0.98, 0.26, 0.26, 0.40)
-	colors[clr.FrameBgActive]          = ImVec4(0.98, 0.26, 0.26, 0.67)
-	colors[clr.TitleBg]                = ImVec4(0.48, 0.16, 0.16, 1.00)
-	colors[clr.TitleBgActive]          = colors[clr.TitleBg]
-	colors[clr.TitleBgCollapsed]       = colors[clr.TitleBg]
-	colors[clr.CheckMark]              = ImVec4(0.98, 0.26, 0.26, 1.00)
-	colors[clr.SliderGrab]             = ImVec4(0.88, 0.26, 0.24, 1.00)
-	colors[clr.SliderGrabActive]       = ImVec4(0.98, 0.26, 0.26, 1.00)
-	colors[clr.Button]                 = ImVec4(0.98, 0.26, 0.26, 0.40)
-	colors[clr.ButtonHovered]          = ImVec4(0.98, 0.26, 0.26, 1.00)
-	colors[clr.ButtonActive]           = ImVec4(0.98, 0.06, 0.06, 1.00)
-	colors[clr.Header]                 = ImVec4(0.98, 0.26, 0.26, 0.31)
-	colors[clr.HeaderHovered]          = ImVec4(0.98, 0.26, 0.26, 0.80)
-	colors[clr.HeaderActive]           = ImVec4(0.98, 0.26, 0.26, 1.00)
-	colors[clr.Separator]              = colors[clr.Border]
-	colors[clr.SeparatorHovered]       = ImVec4(0.75, 0.10, 0.10, 0.78)
-	colors[clr.SeparatorActive]        = ImVec4(0.75, 0.10, 0.10, 1.00)
-	colors[clr.ResizeGrip]             = ImVec4(0.98, 0.26, 0.26, 0.25)
-	colors[clr.ResizeGripHovered]      = ImVec4(0.98, 0.26, 0.26, 0.67)
-	colors[clr.ResizeGripActive]       = ImVec4(0.98, 0.26, 0.26, 0.95)
-	colors[clr.TextSelectedBg]         = ImVec4(0.98, 0.26, 0.26, 0.35)
-	colors[clr.Text]                   = ImVec4(1.00, 1.00, 1.00, 1.00)
-	colors[clr.TextDisabled]           = ImVec4(0.50, 0.50, 0.50, 1.00)
-	colors[clr.WindowBg]               = ImVec4(0.06, 0.06, 0.06, 1.00)
-	colors[clr.ChildWindowBg]          = ImVec4(1.00, 1.00, 1.00, 0.00)
-	colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94)
-	colors[clr.ComboBg]                = colors[clr.PopupBg]
-	colors[clr.Border]                 = ImVec4(0.43, 0.43, 0.50, 0.50)
-	colors[clr.BorderShadow]           = ImVec4(0.48, 0.16, 0.16, 0.00)
-	colors[clr.MenuBarBg]              = ImVec4(0.14, 0.14, 0.14, 1.00)
-	colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.53)
-	colors[clr.ScrollbarGrab]          = ImVec4(0.31, 0.31, 0.31, 1.00)
-	colors[clr.ScrollbarGrabHovered]   = ImVec4(0.41, 0.41, 0.41, 1.00)
-	colors[clr.ScrollbarGrabActive]    = ImVec4(0.51, 0.51, 0.51, 1.00)
-	colors[clr.CloseButton]            = ImVec4(0.41, 0.41, 0.41, 0.50)
-	colors[clr.CloseButtonHovered]     = ImVec4(0.98, 0.39, 0.36, 1.00)
-	colors[clr.CloseButtonActive]      = ImVec4(0.98, 0.39, 0.36, 1.00)
-	colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00)
-	colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00)
-	colors[clr.PlotHistogram]          = ImVec4(0.90, 0.70, 0.00, 1.00)
-	colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.60, 0.00, 1.00)
-	colors[clr.ModalWindowDarkening]   = ImVec4(0.80, 0.80, 0.80, 0.35)
-end
-
 function apply_welcome_blue_style()
 	style.WindowRounding = 8
 	style.FrameRounding = 3
@@ -3173,6 +3136,52 @@ function apply_welcome_blue_style()
 	colors[clr.ComboBg]                = colors[clr.PopupBg]
 	colors[clr.Border]                 = ImVec4(0.43, 0.43, 0.50, 0.50)
 	colors[clr.BorderShadow]           = ImVec4(0.00, 0.00, 0.00, 0.00)
+	colors[clr.MenuBarBg]              = ImVec4(0.14, 0.14, 0.14, 1.00)
+	colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.53)
+	colors[clr.ScrollbarGrab]          = ImVec4(0.31, 0.31, 0.31, 1.00)
+	colors[clr.ScrollbarGrabHovered]   = ImVec4(0.41, 0.41, 0.41, 1.00)
+	colors[clr.ScrollbarGrabActive]    = ImVec4(0.51, 0.51, 0.51, 1.00)
+	colors[clr.CloseButton]            = ImVec4(0.41, 0.41, 0.41, 0.50)
+	colors[clr.CloseButtonHovered]     = ImVec4(0.98, 0.39, 0.36, 1.00)
+	colors[clr.CloseButtonActive]      = ImVec4(0.98, 0.39, 0.36, 1.00)
+	colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00)
+	colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00)
+	colors[clr.PlotHistogram]          = ImVec4(0.90, 0.70, 0.00, 1.00)
+	colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.60, 0.00, 1.00)
+	colors[clr.ModalWindowDarkening]   = ImVec4(0.80, 0.80, 0.80, 0.35)
+end
+
+function apply_welcome_red_style()
+	colors[clr.FrameBg]                = ImVec4(0.48, 0.16, 0.16, 0.54)
+	colors[clr.FrameBgHovered]         = ImVec4(0.98, 0.26, 0.26, 0.40)
+	colors[clr.FrameBgActive]          = ImVec4(0.98, 0.26, 0.26, 0.67)
+	colors[clr.TitleBg]                = ImVec4(0.48, 0.16, 0.16, 1.00)
+	colors[clr.TitleBgActive]          = colors[clr.TitleBg]
+	colors[clr.TitleBgCollapsed]       = colors[clr.TitleBg]
+	colors[clr.CheckMark]              = ImVec4(0.98, 0.26, 0.26, 1.00)
+	colors[clr.SliderGrab]             = ImVec4(0.88, 0.26, 0.24, 1.00)
+	colors[clr.SliderGrabActive]       = ImVec4(0.98, 0.26, 0.26, 1.00)
+	colors[clr.Button]                 = ImVec4(0.98, 0.26, 0.26, 0.40)
+	colors[clr.ButtonHovered]          = ImVec4(0.98, 0.26, 0.26, 1.00)
+	colors[clr.ButtonActive]           = ImVec4(0.98, 0.06, 0.06, 1.00)
+	colors[clr.Header]                 = ImVec4(0.98, 0.26, 0.26, 0.31)
+	colors[clr.HeaderHovered]          = ImVec4(0.98, 0.26, 0.26, 0.80)
+	colors[clr.HeaderActive]           = ImVec4(0.98, 0.26, 0.26, 1.00)
+	colors[clr.Separator]              = colors[clr.Border]
+	colors[clr.SeparatorHovered]       = ImVec4(0.75, 0.10, 0.10, 0.78)
+	colors[clr.SeparatorActive]        = ImVec4(0.75, 0.10, 0.10, 1.00)
+	colors[clr.ResizeGrip]             = ImVec4(0.98, 0.26, 0.26, 0.25)
+	colors[clr.ResizeGripHovered]      = ImVec4(0.98, 0.26, 0.26, 0.67)
+	colors[clr.ResizeGripActive]       = ImVec4(0.98, 0.26, 0.26, 0.95)
+	colors[clr.TextSelectedBg]         = ImVec4(0.98, 0.26, 0.26, 0.35)
+	colors[clr.Text]                   = ImVec4(1.00, 1.00, 1.00, 1.00)
+	colors[clr.TextDisabled]           = ImVec4(0.50, 0.50, 0.50, 1.00)
+	colors[clr.WindowBg]               = ImVec4(0.06, 0.06, 0.06, 1.00)
+	colors[clr.ChildWindowBg]          = ImVec4(1.00, 1.00, 1.00, 0.00)
+	colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94)
+	colors[clr.ComboBg]                = colors[clr.PopupBg]
+	colors[clr.Border]                 = ImVec4(0.43, 0.43, 0.50, 0.50)
+	colors[clr.BorderShadow]           = ImVec4(0.48, 0.16, 0.16, 0.00)
 	colors[clr.MenuBarBg]              = ImVec4(0.14, 0.14, 0.14, 1.00)
 	colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.53)
 	colors[clr.ScrollbarGrab]          = ImVec4(0.31, 0.31, 0.31, 1.00)
