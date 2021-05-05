@@ -1,7 +1,7 @@
 script_name("Johnny Silverhand")
 script_author("Miron Diamond")
 
-script_version = 1.1
+script_version = 1.2
 
 require("moonloader")
 
@@ -30,9 +30,9 @@ imgui.BufferingBar = require('imgui_addons').BufferingBar
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
-setAudioStreamVolume(playsound_1, 100)
-setAudioStreamVolume(playsound_2, 100)
-setAudioStreamVolume(playsound_3, 100)
+setAudioStreamVolume(playsound_1, 45)
+setAudioStreamVolume(playsound_2, 45)
+setAudioStreamVolume(playsound_3, 45)
 
 mainIni = inicfg.load(nil, directIni)
 
@@ -250,128 +250,140 @@ function SaveSettings()
 end
 
 function LoadSettings()
-	local filename_binder = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\binder.json"):format(getFolderPath(0x05))
-	local filename_hint = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\hint.json"):format(getFolderPath(0x05))
-	local filename_wanted = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\wanted.json"):format(getFolderPath(0x05))
-	local filename_ticket = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\ticket.json"):format(getFolderPath(0x05))
-	local filename_post = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\post.json"):format(getFolderPath(0x05))
+	lua_thread.create(function()
+		local filename_binder = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\binder.json"):format(getFolderPath(0x05))
+		local filename_hint = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\hint.json"):format(getFolderPath(0x05))
+		local filename_wanted = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\wanted.json"):format(getFolderPath(0x05))
+		local filename_ticket = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\ticket.json"):format(getFolderPath(0x05))
+		local filename_post = (getGameDirectory().."\\moonloader\\Johnny Silverhand\\post.json"):format(getFolderPath(0x05))
 
-	for line in io.lines(filename_binder) do
-		local result, data = pcall(decodeJson, line)
-		if result then
-			table.insert(BINDER, data)
-			if #data.hotkey > 0 then
-					mrkeys.registerHotKey(data.hotkey, true, function()
-					if not sampIsDialogActive() and not sampIsChatInputActive() then
-						onStartHotkey(data.content)
-					end
-				end)
+		for line in io.lines(filename_binder) do
+			local result, data = pcall(decodeJson, line)
+			if result then
+				table.insert(BINDER, data)
+				if #data.hotkey > 0 then
+						mrkeys.registerHotKey(data.hotkey, true, function()
+						if not sampIsDialogActive() and not sampIsChatInputActive() then
+							onStartHotkey(data.content)
+						end
+					end)
+				end
+				if #data.command > 0 then
+					sampRegisterChatCommand(tostring(data.command), function()
+						if not sampIsDialogActive() then
+							onStartHotkey(data.content)
+						end
+					end)
+				end
 			end
-			if #data.command > 0 then
-				sampRegisterChatCommand(tostring(data.command), function()
-					if not sampIsDialogActive() then
-						onStartHotkey(data.content)
-					end
-				end)
+		end
+
+		wait(0)
+
+		for line in io.lines(filename_hint) do
+			local result, data = pcall(decodeJson, line)
+			if result then
+				table.insert(HINT, data)
 			end
 		end
-	end
 
-	for line in io.lines(filename_hint) do
-		local result, data = pcall(decodeJson, line)
-		if result then
-			table.insert(HINT, data)
+		wait(0)
+
+		for line in io.lines(filename_wanted) do
+			local result, data = pcall(decodeJson, line)
+			if result then
+				table.insert(WANTED, data)
+			end
 		end
-	end
 
-	for line in io.lines(filename_wanted) do
-		local result, data = pcall(decodeJson, line)
-		if result then
-			table.insert(WANTED, data)
+		wait(0)
+
+		for line in io.lines(filename_ticket) do
+			local result, data = pcall(decodeJson, line)
+			if result then
+				table.insert(TICKET, data)
+			end
 		end
-	end
 
-	for line in io.lines(filename_ticket) do
-		local result, data = pcall(decodeJson, line)
-		if result then
-			table.insert(TICKET, data)
+		wait(0)
+
+		for line in io.lines(filename_post) do
+			local result, data = pcall(decodeJson, line)
+			if result then
+				table.insert(POST, data)
+			end
 		end
-	end
 
-	for line in io.lines(filename_post) do
-		local result, data = pcall(decodeJson, line)
-		if result then
-			table.insert(POST, data)
-		end
-	end
+		wait(0)
 
-	text_buffer_post_name.v = mainIni.Buffer.post_name
-	text_buffer_patrol_mode1.v = mainIni.Buffer.patrol_mode1
-	text_buffer_patrol_mode2.v = mainIni.Buffer.patrol_mode2
-	text_buffer_patrol_n1.v = mainIni.Buffer.patrol_n1
-	text_buffer_patrol_n2.v = mainIni.Buffer.patrol_n2
-	text_buffer_patrol_n3.v = mainIni.Buffer.patrol_n3
-	text_buffer_patrol_tencode.v = mainIni.Buffer.patrol_tencode
-	text_buffer_patrol_code.v = mainIni.Buffer.patrol_code
-	text_buffer_patrol_mark.v = mainIni.Buffer.patrol_mark
-	text_buffer_name.v = mainIni.Buffer.name
-	text_buffer_ticket_t1.v = mainIni.Buffer.ticket_t1
-	text_buffer_ticket_t2.v = mainIni.Buffer.ticket_t2
-	text_buffer_ticket_t3.v = mainIni.Buffer.ticket_t3
-	text_buffer_ticket_t4.v = mainIni.Buffer.ticket_t4
-	text_buffer_organization.v = mainIni.Buffer.organization
-	text_buffer_phone.v = mainIni.Buffer.phone
-	text_buffer_rank.v = mainIni.Buffer.rank
-	text_buffer_firstname.v = mainIni.Buffer.firstname
-	text_buffer_surname.v = mainIni.Buffer.surname
-	text_buffer_radio_rp.v = mainIni.Buffer.radio_rp
-	text_buffer_tag.v = mainIni.Buffer.tag
-	text_buffer_radio.v = mainIni.Buffer.radio
-	text_buffer_accent.v = mainIni.Buffer.accent
-	text_buffer_weapon_w1.v = mainIni.Buffer.weapon_w1
-	text_buffer_weapon_w2.v = mainIni.Buffer.weapon_w2
-	text_buffer_weapon_w3.v = mainIni.Buffer.weapon_w3
-	text_buffer_weapon_w4.v = mainIni.Buffer.weapon_w4
-	text_buffer_weapon_w5.v = mainIni.Buffer.weapon_w5
-	text_buffer_weapon_w6.v = mainIni.Buffer.weapon_w6
-	text_buffer_weapon_w7.v = mainIni.Buffer.weapon_w7
-	text_buffer_weapon_w8.v = mainIni.Buffer.weapon_w8
-	toggle_button_hud_block.v = mainIni.Toggle.hud_block
-	toggle_button_hud_p1.v = mainIni.Toggle.hud_p1
-	toggle_button_hud_p2.v = mainIni.Toggle.hud_p2
-	toggle_button_hud_p3.v = mainIni.Toggle.hud_p3
-	toggle_button_hud_p4.v = mainIni.Toggle.hud_p4
-	toggle_button_hud_p5.v = mainIni.Toggle.hud_p5
-	toggle_button_hud_p6.v = mainIni.Toggle.hud_p6
-	toggle_button_hud.v = mainIni.Toggle.hud
-	toggle_button_save.v = mainIni.Toggle.save
-	toggle_button_autogun.v = mainIni.Toggle.autogun
-	toggle_button_wanted.v = mainIni.Toggle.wanted
-	toggle_button_radio_rp.v = mainIni.Toggle.radio_rp
-	toggle_button_ticket.v = mainIni.Toggle.ticket
-	toggle_button_tag.v = mainIni.Toggle.tag
-	toggle_button_accent.v = mainIni.Toggle.accent
-	toggle_button_weapon_weapon.v = mainIni.Toggle.weapon_weapon
-	toggle_button_weapon_w1.v = mainIni.Toggle.weapon_w1
-	toggle_button_weapon_w2.v = mainIni.Toggle.weapon_w2
-	toggle_button_weapon_w3.v = mainIni.Toggle.weapon_w3
-	toggle_button_weapon_w4.v = mainIni.Toggle.weapon_w4
-	toggle_button_weapon_w5.v = mainIni.Toggle.weapon_w5
-	toggle_button_weapon_w6.v = mainIni.Toggle.weapon_w6
-	toggle_button_weapon_w7.v = mainIni.Toggle.weapon_w7
-	toggle_button_weapon_w8.v = mainIni.Toggle.weapon_w8
-	slider_buffer_hud.v = mainIni.Slider.hud
-	slider_buffer_patrol_wait.v = mainIni.Slider.patrol_wait
-	combo_weapon_select.v = mainIni.Combo.weapon_select
-	combo_patrol_select.v = mainIni.Combo.patrol_select
-	Pos_Hud.x = mainIni.Pos.hud_x
-	Pos_Hud.y = mainIni.Pos.hud_y
-	Pos_Pursuit_Mod.x = mainIni.Pos.pursuit_mod_x
-	Pos_Pursuit_Mod.y = mainIni.Pos.pursuit_mod_y
-	Pos_FastMenu.x = mainIni.Pos.fastmenu_x
-	Pos_FastMenu.y = mainIni.Pos.fastmenu_y
-	Pos_Patrol.x = mainIni.Pos.patrol_x
-	Pos_Patrol.y = mainIni.Pos.patrol_y
+		text_buffer_post_name.v = tostring(mainIni.Buffer.post_name)
+		text_buffer_patrol_mode1.v = tostring(mainIni.Buffer.patrol_mode1)
+		text_buffer_patrol_mode2.v = tostring(mainIni.Buffer.patrol_mode2)
+		text_buffer_patrol_n1.v = tostring(mainIni.Buffer.patrol_n1)
+		text_buffer_patrol_n2.v = tostring(mainIni.Buffer.patrol_n2)
+		text_buffer_patrol_n3.v = tostring(mainIni.Buffer.patrol_n3)
+		text_buffer_patrol_tencode.v = tostring(mainIni.Buffer.patrol_tencode)
+		text_buffer_patrol_code.v = tostring(mainIni.Buffer.patrol_code)
+		text_buffer_patrol_mark.v = tostring(mainIni.Buffer.patrol_mark)
+		text_buffer_name.v = tostring(mainIni.Buffer.name)
+		text_buffer_ticket_t1.v = tostring(mainIni.Buffer.ticket_t1)
+		text_buffer_ticket_t2.v = tostring(mainIni.Buffer.ticket_t2)
+		text_buffer_ticket_t3.v = tostring(mainIni.Buffer.ticket_t3)
+		text_buffer_ticket_t4.v = tostring(mainIni.Buffer.ticket_t4)
+		text_buffer_organization.v = tostring(mainIni.Buffer.organization)
+		text_buffer_phone.v = tostring(mainIni.Buffer.phone)
+		text_buffer_rank.v = tostring(mainIni.Buffer.rank)
+		text_buffer_firstname.v = tostring(mainIni.Buffer.firstname)
+		text_buffer_surname.v = tostring(mainIni.Buffer.surname)
+		text_buffer_radio_rp.v = tostring(mainIni.Buffer.radio_rp)
+		text_buffer_tag.v = tostring(mainIni.Buffer.tag)
+		text_buffer_radio.v = tostring(mainIni.Buffer.radio)
+		text_buffer_accent.v = tostring(mainIni.Buffer.accent)
+		text_buffer_weapon_w1.v = tostring(mainIni.Buffer.weapon_w1)
+		text_buffer_weapon_w2.v = tostring(mainIni.Buffer.weapon_w2)
+		text_buffer_weapon_w3.v = tostring(mainIni.Buffer.weapon_w3)
+		text_buffer_weapon_w4.v = tostring(mainIni.Buffer.weapon_w4)
+		text_buffer_weapon_w5.v = tostring(mainIni.Buffer.weapon_w5)
+		text_buffer_weapon_w6.v = tostring(mainIni.Buffer.weapon_w6)
+		text_buffer_weapon_w7.v = tostring(mainIni.Buffer.weapon_w7)
+		text_buffer_weapon_w8.v = tostring(mainIni.Buffer.weapon_w8)
+		toggle_button_hud_block.v = mainIni.Toggle.hud_block
+		toggle_button_hud_p1.v = mainIni.Toggle.hud_p1
+		toggle_button_hud_p2.v = mainIni.Toggle.hud_p2
+		toggle_button_hud_p3.v = mainIni.Toggle.hud_p3
+		toggle_button_hud_p4.v = mainIni.Toggle.hud_p4
+		toggle_button_hud_p5.v = mainIni.Toggle.hud_p5
+		toggle_button_hud_p6.v = mainIni.Toggle.hud_p6
+		toggle_button_hud.v = mainIni.Toggle.hud
+		toggle_button_save.v = mainIni.Toggle.save
+		toggle_button_autogun.v = mainIni.Toggle.autogun
+		toggle_button_wanted.v = mainIni.Toggle.wanted
+		toggle_button_radio_rp.v = mainIni.Toggle.radio_rp
+		toggle_button_ticket.v = mainIni.Toggle.ticket
+		toggle_button_tag.v = mainIni.Toggle.tag
+		toggle_button_accent.v = mainIni.Toggle.accent
+		toggle_button_weapon_weapon.v = mainIni.Toggle.weapon_weapon
+		toggle_button_weapon_w1.v = mainIni.Toggle.weapon_w1
+		toggle_button_weapon_w2.v = mainIni.Toggle.weapon_w2
+		toggle_button_weapon_w3.v = mainIni.Toggle.weapon_w3
+		toggle_button_weapon_w4.v = mainIni.Toggle.weapon_w4
+		toggle_button_weapon_w5.v = mainIni.Toggle.weapon_w5
+		toggle_button_weapon_w6.v = mainIni.Toggle.weapon_w6
+		toggle_button_weapon_w7.v = mainIni.Toggle.weapon_w7
+		toggle_button_weapon_w8.v = mainIni.Toggle.weapon_w8
+		slider_buffer_hud.v = mainIni.Slider.hud
+		slider_buffer_patrol_wait.v = mainIni.Slider.patrol_wait
+		combo_weapon_select.v = mainIni.Combo.weapon_select
+		combo_patrol_select.v = mainIni.Combo.patrol_select
+		Pos_Hud.x = mainIni.Pos.hud_x
+		Pos_Hud.y = mainIni.Pos.hud_y
+		Pos_Pursuit_Mod.x = mainIni.Pos.pursuit_mod_x
+		Pos_Pursuit_Mod.y = mainIni.Pos.pursuit_mod_y
+		Pos_FastMenu.x = mainIni.Pos.fastmenu_x
+		Pos_FastMenu.y = mainIni.Pos.fastmenu_y
+		Pos_Patrol.x = mainIni.Pos.patrol_x
+		Pos_Patrol.y = mainIni.Pos.patrol_y
+	end)
 end
 
 function Register_Imgui()
